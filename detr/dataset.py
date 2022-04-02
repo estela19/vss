@@ -23,7 +23,7 @@ class VidhoiDataset(Dataset):
 		img = transform(pilimg).to(self.device)
 		print(f'path : {self.imglst[idx]}')
 		print(f'shape : {img.shape}')
-		return img
+		return idx, img
 
 if __name__ == '__main__':
 	data = VidhoiDataset()

@@ -5,10 +5,11 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from torchvision import transforms
 
 from dataset import VidhoiDataset
 from models import build_model
-from draw import draw_boxes
+from draw import plot_results
 
 '''
 def box_cxcywh_to_xyxy(x):
@@ -43,7 +44,7 @@ def detect():
 	parser = argparse.ArgumentParser('Detector')
 	parser.add_argument('--lr', default=1e-4, type=float)
 	parser.add_argument('--lr_backbone', default=1e-5, type=float)
-	parser.add_argument('--batch_size', default=2, type=int)
+	parser.add_argument('--batch_size', default=1, type=int)
 	parser.add_argument('--weight_decay', default=1e-4, type=float)
 	parser.add_argument('--epochs', default=300, type=int)
 	parser.add_argument('--lr_drop', default=200, type=int)
@@ -111,7 +112,7 @@ def detect():
 	parser.add_argument('--device', default='cuda',
 						help='device to use for training / testing')
 	parser.add_argument('--seed', default=42, type=int)
-	parser.add_argument('--resume', default='', help='resume from checkpoint')
+	parser.add_argument('--resume', default='https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth', help='resume from checkpoint')
 	parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
 						help='start epoch')
 	parser.add_argument('--eval', action='store_true')
@@ -124,8 +125,9 @@ def detect():
 		
 
 	parser.add_argument('--data_path')
-	args = parser.parse_args()
 
+	argstr = '--no_aux_loss --eval --resume https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth'
+	args = parser.parse_args(args=argstr.split())
 
 	device = torch.device(args.device)
 
@@ -133,7 +135,7 @@ def detect():
 	model.to(device)
 
 	vid_data = VidhoiDataset()
-	dataloader = torch.utils.data.DataLoader(vid_data, batch_size=2, shuffle=False)
+	dataloader = torch.utils.data.DataLoader(vid_data, batch_size=1, shuffle=False)
 
 	model.eval()
 	criterion.eval()
@@ -144,15 +146,20 @@ def detect():
 	else:
 		checkpoint = torch.load(args.resume, map_location='cpu')
 	model.load_state_dict(checkpoint['model'])
-	for img in dataloader:
+	for idx, img in dataloader:
 		outputs = model(img)
-		target_size = torch.IntTensor([[480, 640], [480, 640]]).to(device)
+		target_size = torch.IntTensor([[480, 640]]).to(device)
 		result = postprocessors['bbox'](outputs, target_size)
-		print(result)
+		#print(result)
+		topil = transforms.ToPILImage()
+		pilimg = topil((img*127.5 + 128).clamp(0, 255).to(torch.uint8).squeeze())
+		plot_results(idx.item(), pilimg, result[0]['scores'], result[0]['labels'], result[0]['boxes'])
+		'''
 		image_with_boxes = draw_boxes(
 			img, result[0]["boxes"],
 			result[0]["labels"], result[0]["scores"])
 		print(image_with_boxes)
+		'''
 
 if __name__ == '__main__':
 	detect()

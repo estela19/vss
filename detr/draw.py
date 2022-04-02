@@ -115,16 +115,19 @@ CLASSES = [
 COLORS = [[0.000, 0.447, 0.741], [0.850, 0.325, 0.098], [0.929, 0.694, 0.125],
           [0.494, 0.184, 0.556], [0.466, 0.674, 0.188], [0.301, 0.745, 0.933]]
 
-def plot_results(pil_img, prob, boxes):
-plt.figure(figsize=(16,10))
-plt.imshow(pil_img)
-ax = plt.gca()
-for p, (xmin, ymin, xmax, ymax), c in zip(prob, boxes.tolist(), COLORS * 100):
-	ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-								fill=False, color=c, linewidth=3))
-	cl = p.argmax()
-	text = f'{CLASSES[cl]}: {p[cl]:0.2f}'
-	ax.text(xmin, ymin, text, fontsize=15,
-			bbox=dict(facecolor='yellow', alpha=0.5))
-plt.axis('off')
-plt.show()
+def plot_results(i, pil_img, prob, labels, boxes):
+	plt.figure(figsize=(16,10))
+	plt.imshow(pil_img)
+	ax = plt.gca()
+	for p, l, (xmin, ymin, xmax, ymax), c in zip(prob, labels, boxes.tolist(), COLORS * 100):
+		if p < 0.7:
+			continue
+		ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+									fill=False, color=c, linewidth=3))
+		#cl = p.argmax()
+		text = f'{CLASSES[l]}: {p:0.2f}'
+		ax.text(xmin, ymin, text, fontsize=15,
+				bbox=dict(facecolor='yellow', alpha=0.5))
+	idx = str(i).zfill(5)
+	plt.axis('off')
+	plt.savefig(f'/home/senior/workspace/output/0000/{idx}.jpg')
